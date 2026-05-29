@@ -22,3 +22,7 @@
   url=git@github.com:triptix-tech/rtree.c.git
   branch=master
   commit=6ed73a7dc4f1184f2b5b2acd8ac1c2b28a273057
+[libmorton]
+  url=git@github.com:Forceflow/libmorton.git
+  branch=master
+  commit=7923faa88d7e564020b2d5d408bf8c186ecbe363
