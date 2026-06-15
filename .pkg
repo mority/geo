@@ -21,4 +21,4 @@
 [rtree.c]
   url=git@github.com:triptix-tech/rtree.c.git
   branch=master
-  commit=6ed73a7dc4f1184f2b5b2acd8ac1c2b28a273057
+  commit=855982edf7efbba1798bacfea12997bf541f5661
