@@ -1,9 +1,25 @@
 #include "doctest/doctest.h"
 
+#include <cmath>
 #include <array>
 #include <vector>
 
+#include "boost/geometry.hpp"
+
 #include "geo/latlng.h"
+
+namespace {
+
+// geodesic distance on the WGS84 ellipsoid
+double karney_distance(geo::latlng const& a, geo::latlng const& b) {
+  namespace bg = boost::geometry;
+  using point = bg::model::point<double, 2, bg::cs::geographic<bg::degree>>;
+  return bg::distance(
+      point{a.lng(), a.lat()}, point{b.lng(), b.lat()},
+      bg::strategy::distance::geographic<bg::strategy::karney>{});
+}
+
+}  // namespace
 
 TEST_CASE("bearing_returns_cw_from_north") {
   CHECK(geo::bearing({0.0, 0.0}, {10.0, 0.0}) == doctest::Approx(0.0));
@@ -216,5 +232,52 @@ TEST_CASE("approx_squaredDistance") {
     CHECK(std::abs(geo::distance(a, b) -
                    std::sqrt(geo::approx_squared_distance(
                        a, b, geo::approx_distance_lng_degrees(a)))) < eps);
+  }
+}
+
+TEST_CASE("approx_meters_per_degree") {
+  // max. error of linear interpolation between the 1° entries is ~h²/8
+  auto const eps = 4e-5;
+  auto const delta = 0.001;
+  for (auto lat = -89.0; lat <= 89.0; lat += 0.25) {
+    auto const scale = geo::approx_meters_per_degree(lat);
+    auto const lat_exp =
+        karney_distance({lat - delta, 0.0}, {lat + delta, 0.0}) / (2 * delta);
+    auto const lng_exp = karney_distance({lat, 0.0}, {lat, delta}) / delta;
+    CHECK(std::abs(scale.lat_ - lat_exp) / lat_exp < eps);
+    CHECK(std::abs(scale.lng_ - lng_exp) / lng_exp < eps);
+  }
+
+  CHECK(geo::approx_meters_per_degree(90.0).lng_ == doctest::Approx(0.0));
+  CHECK(geo::approx_meters_per_degree(-90.0).lng_ == doctest::Approx(0.0));
+  CHECK(geo::approx_meters_per_degree(90.0).lat_ ==
+        doctest::Approx(geo::approx_meters_per_degree(-90.0).lat_));
+}
+
+TEST_CASE("approx_squaredDistance_localRadii") {
+  auto const eps = 1e-4;
+  for (auto const lat : {-60.5, -45.5, -0.5, 0.5, 30.5, 50.5, 60.5, 70.5}) {
+    for (auto const dist : {100.0, 1'000.0, 10'000.0, 100'000.0}) {
+      for (auto bearing = 0.0; bearing < 360.0; bearing += 15.0) {
+        auto const a = geo::latlng{lat, 8.5};
+        auto const b = geo::destination_point(a, dist, bearing);
+        auto const exp = karney_distance(a, b);
+        auto const act =
+            std::sqrt(geo::approx_squared_distance_local_radii(a, b));
+        CHECK(std::abs(act - exp) / exp < eps);
+      }
+    }
+  }
+
+  // wraparound
+  auto const tests = std::vector<std::array<geo::latlng, 2>>{
+      {{{50.0, 179.99}, {50.01, -179.99}}},
+      {{{1.0, -179.9}, {-1.0, 179.9}}},
+      {{{-33.5, 179.95}, {-33.4, -179.95}}},
+  };
+  for (auto const& [a, b] : tests) {
+    auto const exp = karney_distance(a, b);
+    auto const act = std::sqrt(geo::approx_squared_distance_local_radii(a, b));
+    CHECK(std::abs(act - exp) / exp < eps);
   }
 }

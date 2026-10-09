@@ -31,15 +31,6 @@ double distance(latlng const& a, latlng const& b) {
   return boost::geometry::distance(a, b) * kEarthRadiusMeters;
 }
 
-double approx_squared_distance(latlng const& a, latlng const& b,
-                               double const approx_distance_lng_degrees) {
-  auto const y = std::abs(a.lat() - b.lat()) * kApproxDistanceLatDegrees;
-  auto const xdiff = std::abs(a.lng() - b.lng());
-  auto const x =
-      (xdiff > 180.0 ? (360.0 - xdiff) : xdiff) * approx_distance_lng_degrees;
-  return x * x + y * y;
-}
-
 // Initial bearing (CW from north) from p1 to p2.
 // http://www.movable-type.co.uk/scripts/latlong.html
 double bearing(latlng const& p1, latlng const& p2) {
