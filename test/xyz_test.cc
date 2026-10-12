@@ -5,10 +5,6 @@
 #include <random>
 #include <vector>
 
-#include "boost/geometry.hpp"
-
-#include "geo/constants.h"
-#include "geo/detail/register_latlng.h"
 #include "geo/latlng.h"
 #include "geo/xyz.h"
 
@@ -19,15 +15,6 @@ namespace sc = std::chrono;
 #define GEO_STOP_TIMING(_X) _X##_stop = sc::steady_clock::now()
 #define GEO_TIMING_MS(_X) \
   (sc::duration_cast<sc::milliseconds>(_X##_stop - _X##_start).count())
-
-namespace {
-
-// xyz::haversine_distance is on the sphere, so compare it with the sphere
-double sphere_distance(geo::latlng const& a, geo::latlng const& b) {
-  return boost::geometry::distance(a, b) * geo::kEarthRadiusMeters;
-}
-
-}  // namespace
 
 TEST_CASE("xyz haversine_distance") {
   constexpr auto kSize = 100;  // increase this number for perf eval
@@ -61,7 +48,7 @@ TEST_CASE("xyz haversine_distance") {
       std::vector<double> row;
       row.reserve(latlng_pos.size());
       for (auto const& pos_b : latlng_pos) {
-        row.emplace_back(sphere_distance(pos_a, pos_b));
+        row.emplace_back(haversine_distance(pos_a, pos_b));
       }
       latlng_dists.emplace_back(std::move(row));
     }
@@ -112,7 +99,7 @@ TEST_CASE("xyz haversine_distance") {
     for (auto i = 0; i < kSize; ++i) {
       auto min_d = std::numeric_limits<double>::infinity();
       for (auto const& pos_b : latlng_pos_skip_self[i]) {
-        auto const d = sphere_distance(latlng_pos[i], pos_b);
+        auto const d = haversine_distance(latlng_pos[i], pos_b);
         if (d < min_d) {
           min_d = d;
         }

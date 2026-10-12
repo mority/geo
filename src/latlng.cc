@@ -16,11 +16,11 @@
 
 namespace geo {
 
-namespace {
-
 double haversine_distance(latlng const& a, latlng const& b) {
   return boost::geometry::distance(a, b) * kEarthRadiusMeters;
 }
+
+namespace {
 
 struct meters_per_degree {
   double lat_, lng_;

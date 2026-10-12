@@ -6,16 +6,9 @@
 
 #include "boost/geometry.hpp"
 
-#include "geo/constants.h"
-#include "geo/detail/register_latlng.h"
 #include "geo/latlng.h"
 
 namespace {
-
-// the sphere that the approx_* functions approximate
-double sphere_distance(geo::latlng const& a, geo::latlng const& b) {
-  return boost::geometry::distance(a, b) * geo::kEarthRadiusMeters;
-}
 
 double karney_distance(geo::latlng const& a, geo::latlng const& b) {
   namespace bg = boost::geometry;
@@ -235,7 +228,7 @@ TEST_CASE("approx_squaredDistance") {
   };
 
   for (auto const& [a, b] : tests) {
-    CHECK(std::abs(sphere_distance(a, b) -
+    CHECK(std::abs(geo::haversine_distance(a, b) -
                    std::sqrt(geo::approx_squared_distance(
                        a, b, geo::approx_distance_lng_degrees(a)))) < eps);
   }

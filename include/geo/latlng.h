@@ -39,6 +39,10 @@ struct latlng {
 // above 80° latitude.
 double distance(latlng const&, latlng const&);
 
+// Great-circle distance in meters on a sphere with radius kEarthRadiusMeters,
+// the sphere of the approx_* functions and xyz. Up to 0.56% off distance().
+double haversine_distance(latlng const&, latlng const&);
+
 double approx_squared_distance(latlng const&, latlng const&,
                                double approx_distance_lng_degrees);
 
